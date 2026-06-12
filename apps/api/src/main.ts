@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 // Decimal trafega como number no JSON (cálculo continua em Decimal no servidor).
-(Prisma.Decimal.prototype as { toJSON?: () => number }).toJSON = function (this: {
+(Prisma.Decimal.prototype as unknown as { toJSON: () => number }).toJSON = function (this: {
   toNumber: () => number;
 }) {
   return this.toNumber();

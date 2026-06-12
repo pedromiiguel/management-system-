@@ -170,6 +170,12 @@ export const manualEntrySchema = z.object({
 });
 export type ManualEntryInput = z.infer<typeof manualEntrySchema>;
 
+export const settleReceivableSchema = z.object({
+  /** Como o fiado foi recebido — vira entrada no fluxo de caixa (BR-08). */
+  paymentMethod: z.enum([PaymentMethod.CASH, PaymentMethod.PIX, PaymentMethod.CARD]),
+});
+export type SettleReceivableInput = z.infer<typeof settleReceivableSchema>;
+
 // ---------- Configurações (NFR-10) ----------
 export const settingsSchema = z.object({
   stockPolicy: z.enum(StockPolicy).optional(),

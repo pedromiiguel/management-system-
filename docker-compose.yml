@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: beverage
+      POSTGRES_PASSWORD: beverage
+      POSTGRES_DB: beverage
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U beverage -d beverage']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # NFR-08: backup diário automático com pg_dump; restaure com
+  # `cat backups/<arquivo>.sql | docker compose exec -T postgres psql -U beverage beverage`
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: beverage
+    volumes:
+      - ./backups:/backups
+    entrypoint: >
+      sh -c 'while true; do
+        pg_dump -h postgres -U beverage beverage > "/backups/beverage-$$(date +%Y%m%d-%H%M%S).sql" &&
+        ls -1t /backups/*.sql 2>/dev/null | tail -n +15 | xargs -r rm --;
+        sleep 86400;
+      done'
+
+  # Produção na máquina da loja: docker compose --profile prod up -d --build
+  api:
+    profiles: ['prod']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://beverage:beverage@postgres:5432/beverage?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      PORT: 3000
+    ports:
+      - '3000:3000'
+
+  web:
+    profiles: ['prod']
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8080:80'
+
+volumes:
+  pgdata:
