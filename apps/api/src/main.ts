@@ -14,7 +14,9 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: true, credentials: true });
+  // Sem CORS_ORIGIN definido, reflete qualquer origem (conveniente em dev).
+  const corsOrigin = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim());
+  app.enableCors({ origin: corsOrigin ?? true, credentials: true });
   app.useGlobalFilters(new PrismaExceptionFilter());
   app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 3000);
