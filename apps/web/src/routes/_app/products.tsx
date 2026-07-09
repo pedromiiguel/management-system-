@@ -6,10 +6,12 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { productSchema, stockEntrySchema, type ProductInput } from '@beverage/shared';
 import { Screen } from '../_app';
+import { Confirm } from '../../components/confirm';
 import {
   SBtn,
   SCard,
   SChip,
+  SIconBtn,
   SModal,
   SolIcon,
   STable,
@@ -31,6 +33,8 @@ type Modal =
   | { kind: 'entry'; product?: Product };
 
 function ProductsPage() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(1);
@@ -63,6 +67,29 @@ function ProductsPage() {
     }
     return map;
   }, [alerts]);
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/products/${id}`)).data,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast('Produto excluído');
+    },
+    onError: (error) => toast(apiErrorMessage(error), 'danger'),
+  });
+
+  const handleDelete = async (product: Product) => {
+    const confirmed = await Confirm.call({
+      title: 'Excluir produto?',
+      message: (
+        <>
+          Tem certeza que deseja excluir <b>{product.name}</b>? Essa ação não pode ser desfeita.
+        </>
+      ),
+      confirmLabel: 'Excluir',
+      danger: true,
+    });
+    if (confirmed) remove.mutate(product.id);
+  };
 
   const allItems = data?.items ?? [];
   const items = allItems.filter((p) => {
@@ -109,9 +136,9 @@ function ProductsPage() {
 
         <SCard pad={8} style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <STable
-            cols={['SKU', 'Código de barras', 'Produto', 'Preço venda', 'Estoque', 'Mín.', 'Situação']}
-            widths="80px 140px 1fr 110px 80px 60px 150px"
-            align={[null, null, null, 'right', 'center', 'center', null]}
+            cols={['SKU', 'Código de barras', 'Produto', 'Preço venda', 'Estoque', 'Mín.', 'Situação', 'Ações']}
+            widths="80px 140px 1fr 110px 80px 60px 150px 60px"
+            align={[null, null, null, 'right', 'center', 'center', null, 'center']}
             dense
             rows={items.map((p) => {
               const low = lowIds.has(p.id);
@@ -135,6 +162,16 @@ function ProductsPage() {
                   ) : (
                     <STag key="t" tone="ok">ativo</STag>
                   ),
+                  <SIconBtn
+                    key="del"
+                    icon="trash"
+                    danger
+                    title="Excluir produto"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDelete(p);
+                    }}
+                  />,
                 ],
               };
             })}
