@@ -18,7 +18,7 @@ import {
 } from '../../components/sol';
 import { api, apiErrorMessage } from '../../lib/api';
 import { getUser } from '../../lib/auth';
-import { formatBRL, formatDateTime, parseMoney } from '../../lib/format';
+import { formatBRL, formatDateTime, maskBRL, parseMoney } from '../../lib/format';
 import type { Customer, Product, Sale } from '../../lib/types';
 
 export const Route = createFileRoute('/_app/pos')({
@@ -366,7 +366,8 @@ function PosPage() {
                 <span className="s-input" style={{ width: 120, padding: '4px 10px' }}>
                   <input
                     value={received}
-                    onChange={(e) => setReceived(e.target.value)}
+                    onChange={(e) => setReceived(maskBRL(e.target.value))}
+                    inputMode="numeric"
                     placeholder="0,00"
                     style={{ textAlign: 'right', fontWeight: 700 }}
                     onKeyDown={(e) => e.key === 'Enter' && finalize()}

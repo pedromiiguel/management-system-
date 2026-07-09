@@ -30,6 +30,18 @@ export function parseMoney(raw: string): number {
   return Number.isFinite(value) ? Math.round(value * 100) / 100 : NaN;
 }
 
+const brlDigits = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** Máscara para inputs de moeda: digita "1250" → "12,50", "123456" → "1.234,56". */
+export function maskBRL(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  return brlDigits.format(Number(digits) / 100);
+}
+
 /** yyyy-mm-dd local (para inputs type=date). */
 export function toDateInput(date: Date): string {
   const offset = date.getTimezoneOffset() * 60000;
