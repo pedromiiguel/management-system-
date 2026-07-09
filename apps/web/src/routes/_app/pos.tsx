@@ -1,6 +1,8 @@
 import { useHotkey } from '@tanstack/react-hotkeys';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import axios from 'axios';
+import { clsx } from 'clsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PaymentMethod, PAYMENT_METHOD_LABELS, type DiscountInput } from '@beverage/shared';
 import { Screen } from '../_app';
@@ -27,7 +29,7 @@ export const Route = createFileRoute('/_app/pos')({
 
 type Modal =
   | { kind: 'none' }
-  | { kind: 'search' }
+  | { kind: 'search'; initialQuery?: string }
   | { kind: 'quantity' }
   | { kind: 'discount' }
   | { kind: 'customer' }
@@ -48,10 +50,28 @@ function PosPage() {
   const [received, setReceived] = useState('');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [modal, setModal] = useState<Modal>({ kind: 'none' });
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const [debouncedScan, setDebouncedScan] = useState('');
 
   const focusScan = useCallback(() => {
     requestAnimationFrame(() => scanRef.current?.focus());
   }, []);
+
+  // Autocomplete por nome/SKU (FR-11) — debounce simples para não disparar 1 request por tecla.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedScan(scan.trim()), 200);
+    return () => clearTimeout(id);
+  }, [scan]);
+
+  const { data: suggestData } = useQuery({
+    queryKey: ['products', 'suggest', debouncedScan],
+    queryFn: async () =>
+      (await api.get<{ items: Product[] }>('/products', { params: { search: debouncedScan, perPage: 6 } })).data,
+    enabled: debouncedScan.length >= 2,
+  });
+  const suggestions = debouncedScan.length >= 2 ? suggestData?.items ?? [] : [];
+  const suggestOpen = scan.trim().length >= 2 && suggestions.length > 0;
+  const highlighted = Math.min(activeSuggestion, suggestions.length - 1);
 
   const resetCheckout = useCallback(() => {
     setPayment(PaymentMethod.CASH);
@@ -93,7 +113,13 @@ function PosPage() {
       if (warning) toast(warning, 'warn');
       focusScan();
     },
-    onError: (error) => {
+    onError: (error, input) => {
+      // Código sem match exato (EAN/SKU/id) — cai para a busca por nome (FR-11).
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setScan('');
+        setModal({ kind: 'search', initialQuery: input.code });
+        return;
+      }
       toast(apiErrorMessage(error), 'danger');
       focusScan();
     },
@@ -189,6 +215,13 @@ function PosPage() {
     setScan('');
   }
 
+  function pickSuggestion(product: Product) {
+    if (!sale || busy) return;
+    addItem.mutate({ code: product.id });
+    setScan('');
+    setActiveSuggestion(0);
+  }
+
   function finalize() {
     if (!sale || items.length === 0) {
       toast('Adicione itens antes de finalizar', 'warn');
@@ -249,22 +282,61 @@ function PosPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 332px', gap: 16, height: '100%' }}>
         {/* Coluna esquerda — scan + itens */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
-          <div className="s-scan">
-            <SolIcon name="scan" size={22} />
-            <input
-              ref={scanRef}
-              autoFocus
-              value={scan}
-              onChange={(e) => setScan(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  submitScan();
-                }
-              }}
-              placeholder="Passe o código de barras ou digite o nome / SKU…"
-            />
-            <SKbd>F2</SKbd>
+          <div style={{ position: 'relative' }}>
+            <div className="s-scan">
+              <SolIcon name="scan" size={22} />
+              <input
+                ref={scanRef}
+                autoFocus
+                value={scan}
+                onChange={(e) => {
+                  setScan(e.target.value);
+                  setActiveSuggestion(0);
+                }}
+                onKeyDown={(e) => {
+                  if (suggestOpen && e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActiveSuggestion((i) => Math.min(i + 1, suggestions.length - 1));
+                    return;
+                  }
+                  if (suggestOpen && e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActiveSuggestion((i) => Math.max(i - 1, 0));
+                    return;
+                  }
+                  if (suggestOpen && e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setScan('');
+                    return;
+                  }
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (suggestOpen) pickSuggestion(suggestions[highlighted]!);
+                    else submitScan();
+                  }
+                }}
+                placeholder="Passe o código de barras ou digite o nome / SKU…"
+              />
+              <SKbd>F2</SKbd>
+            </div>
+            {suggestOpen && (
+              <div className="s-suggest">
+                {suggestions.map((p, i) => (
+                  <div
+                    key={p.id}
+                    className={clsx('s-suggest-item', i === highlighted && 'is-active')}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => pickSuggestion(p)}
+                  >
+                    <span>{p.name}</span>
+                    <span className="s-dim" style={{ fontSize: 12 }}>
+                      {formatBRL(p.salePrice)} · estoque {p.currentStock}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <SCard pad={8} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'auto' }}>
@@ -410,6 +482,7 @@ function PosPage() {
 
       {modal.kind === 'search' && (
         <SearchModal
+          initialQuery={modal.initialQuery}
           onPick={(product) => {
             addItem.mutate({ code: product.id });
             setModal({ kind: 'none' });
@@ -483,8 +556,16 @@ function PosPage() {
 
 // ---------- Modais do PDV ----------
 
-function SearchModal({ onPick, onClose }: { onPick: (p: Product) => void; onClose: () => void }) {
-  const [search, setSearch] = useState('');
+function SearchModal({
+  initialQuery,
+  onPick,
+  onClose,
+}: {
+  initialQuery?: string;
+  onPick: (p: Product) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState(initialQuery ?? '');
   const { data } = useQuery({
     queryKey: ['products', 'search', search],
     queryFn: async () =>
