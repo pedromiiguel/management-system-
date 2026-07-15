@@ -22,7 +22,7 @@ import {
 import { Confirm } from '../../components/confirm';
 import { api, apiErrorMessage } from '../../lib/api';
 import { getUser } from '../../lib/auth';
-import { buildCupom } from '../../lib/cupom';
+import { buildCupom, STORE } from '../../lib/cupom';
 import { formatBRL, maskBRL, parseMoney } from '../../lib/format';
 import type { Customer, Product, Sale, SaleItem } from '../../lib/types';
 
@@ -30,9 +30,6 @@ export const Route = createFileRoute('/_app/pos')({
   component: PosPage,
 });
 
-// Dados do estabelecimento impressos no cupom — trocar o CNPJ placeholder
-// pelo CNPJ real antes de usar em produção.
-const STORE = { name: 'COSTAS BAR', cnpj: '67.968.751/0001-77' };
 
 type Modal =
   | { kind: 'none' }
@@ -53,7 +50,7 @@ function PosPage() {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
   const [payment, setPayment] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [withInvoice, setWithInvoice] = useState(true);
-  const [serviceFee, setServiceFee] = useState(true);
+  const [serviceFee, setServiceFee] = useState(false);
   const [received, setReceived] = useState('');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [modal, setModal] = useState<Modal>({ kind: 'none' });
@@ -83,7 +80,7 @@ function PosPage() {
   const resetCheckout = useCallback(() => {
     setPayment(PaymentMethod.CASH);
     setWithInvoice(true);
-    setServiceFee(true);
+    setServiceFee(false);
     setReceived('');
     setCustomer(null);
     setSelectedId(null);

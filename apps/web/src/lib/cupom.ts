@@ -83,6 +83,9 @@ export interface CupomStore {
   cnpj?: string;
 }
 
+/** Dados do estabelecimento impressos no cupom (PDV e reimpressão no histórico). */
+export const STORE: CupomStore = { name: 'COSTAS BAR', cnpj: '67.968.751/0001-77' };
+
 export function buildCupom(sale: Sale, store: CupomStore): string {
   const emittedAt = new Date(sale.completedAt ?? Date.now()).toLocaleString('pt-BR', {
     day: '2-digit',

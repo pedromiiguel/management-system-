@@ -190,6 +190,10 @@ body {
 @media (prefers-reduced-motion: reduce) { .s-caret { animation: none; } }
 
 /* ---------- cupom não-fiscal (FR-23) — bobina térmica de 80mm ---------- */
+/* Cupom presente no DOM só para impressão (ex.: reimpressão pelo histórico) */
+.s-print-only { display: none; }
+@media print { .s-print-only { display: block; } }
+
 .s-cupom { margin: 0; padding: 12px 10px; background: #fafaf7; border: 1px dashed rgba(2, 47, 64, 0.25); border-radius: var(--r-sm); font: 12px/1.4 ui-monospace, 'Cascadia Mono', Consolas, monospace; white-space: pre; overflow-x: auto; color: #111; }
 
 @media print {

@@ -16,6 +16,7 @@ import {
   useToast,
 } from '../../components/sol';
 import { api, apiErrorMessage } from '../../lib/api';
+import { buildCupom, STORE } from '../../lib/cupom';
 import { formatBRL, formatDateTime, toDateInput } from '../../lib/format';
 import { getToken } from '../../lib/auth';
 import type { Paginated, Sale } from '../../lib/types';
@@ -29,7 +30,9 @@ type Tab = 'sales' | 'best' | 'margin' | 'stock';
 interface SalesReport {
   days: { day: string; count: number; total: number }[];
   count: number;
+  /** Receita líquida de taxa de serviço (só produtos) — ver ADR 0002. */
   total: number;
+  serviceFeeTotal: number;
 }
 
 interface ProductPerf {
@@ -148,6 +151,7 @@ function SalesTab({ from, to }: { from: string; to: string }) {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [voiding, setVoiding] = useState<Sale | null>(null);
+  const [detail, setDetail] = useState<Sale | null>(null);
 
   const { data: report } = useQuery({
     queryKey: ['reports', 'sales', from, to],
@@ -181,7 +185,8 @@ function SalesTab({ from, to }: { from: string; to: string }) {
   return (
     <>
       <div style={{ display: 'flex', gap: 12 }}>
-        <SStat label="Receita no período" value={formatBRL(report?.total)} />
+        <SStat label="Receita no período" value={formatBRL(report?.total)} sub="produtos, líquida de taxa de serviço" />
+        <SStat label="Taxa de serviço" value={formatBRL(report?.serviceFeeTotal)} sub="10% — fica com a casa" />
         <SStat label="Nº de vendas" value={report?.count ?? 0} />
         <SStat label="Ticket médio" value={formatBRL(ticket)} />
         <SStat label="Canceladas" value={cancelled} sub="estoque estornado automaticamente" />
@@ -209,6 +214,7 @@ function SalesTab({ from, to }: { from: string; to: string }) {
           emptyText="Nenhuma venda no período"
           rows={sales.map((s) => ({
             key: s.id,
+            onClick: () => setDetail(s),
             cells: [
               formatDateTime(s.completedAt ?? s.cancelledAt),
               `#${s.id.slice(-6).toUpperCase()}`,
@@ -219,12 +225,16 @@ function SalesTab({ from, to }: { from: string; to: string }) {
               s.status === 'CANCELLED' ? (
                 <STag key="a" tone="danger">cancelada</STag>
               ) : (
-                <SBtn key="a" ghost danger onClick={() => setVoiding(s)}>Estornar</SBtn>
+                // span impede que o clique no Estornar também abra o detalhe
+                <span key="a" onClick={(e) => e.stopPropagation()}>
+                  <SBtn ghost danger onClick={() => setVoiding(s)}>Estornar</SBtn>
+                </span>
               ),
             ],
           }))}
         />
       </SCard>
+      {detail && <SaleDetailModal sale={detail} onClose={() => setDetail(null)} />}
       {voiding && (
         <SModal title={`Estornar venda #${voiding.id.slice(-6).toUpperCase()}?`} onClose={() => setVoiding(null)}>
           <div className="s-dim" style={{ fontSize: 13.5, marginBottom: 16 }}>
@@ -240,6 +250,72 @@ function SalesTab({ from, to }: { from: string; to: string }) {
         </SModal>
       )}
     </>
+  );
+}
+
+// Detalhe de uma venda do histórico: itens, totais e reimpressão do cupom
+// (só para vendas concluídas — estornada é consulta, não gera cupom).
+function SaleDetailModal({ sale, onClose }: { sale: Sale; onClose: () => void }) {
+  const cancelled = sale.status === 'CANCELLED';
+  const serviceFee = sale.serviceFee ?? 0;
+  const discount = sale.subtotal - (sale.total - serviceFee);
+  return (
+    <SModal title={`Venda #${sale.id.slice(-6).toUpperCase()}`} onClose={onClose} width={480}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+        {cancelled ? <STag tone="danger">estornada</STag> : <STag tone="accent">concluída</STag>}
+        <span className="s-dim" style={{ fontSize: 12.5 }}>
+          {formatDateTime(sale.completedAt ?? sale.cancelledAt)} · Operador: {sale.operator.name}
+        </span>
+      </div>
+      <STable
+        cols={['Produto', 'Qtd', 'Unit.', 'Total']}
+        widths="1fr 50px 90px 90px"
+        align={[null, 'center', 'right', 'right']}
+        dense
+        rows={sale.items.map((i) => ({
+          key: i.id,
+          cells: [
+            i.product.name,
+            i.quantity,
+            formatBRL(i.unitPrice),
+            formatBRL(i.unitPrice * i.quantity),
+          ],
+        }))}
+      />
+      <div className="s-divider" />
+      <div className="s-kv"><span>Subtotal</span><b>{formatBRL(sale.subtotal)}</b></div>
+      {discount > 0.005 && (
+        <div className="s-kv">
+          <span>
+            Desconto{sale.discountType === 'PERCENT' ? ` (${sale.discountValue}%)` : ''}
+          </span>
+          <b>-{formatBRL(discount)}</b>
+        </div>
+      )}
+      {serviceFee > 0 && (
+        <div className="s-kv"><span>Taxa de serviço (10%)</span><b>{formatBRL(serviceFee)}</b></div>
+      )}
+      <div className="s-kv"><span>Total</span><b style={{ fontSize: 16 }}>{formatBRL(sale.total)}</b></div>
+      <div className="s-kv">
+        <span>Pagamento</span>
+        <b>{sale.paymentMethod ? PAYMENT_METHOD_LABELS[sale.paymentMethod] : '—'}</b>
+      </div>
+      {sale.change !== null && (
+        <>
+          <div className="s-kv"><span>Recebido</span><b>{formatBRL(sale.amountPaid)}</b></div>
+          <div className="s-kv"><span>Troco</span><b>{formatBRL(sale.change)}</b></div>
+        </>
+      )}
+      {sale.customer && (
+        <div className="s-kv"><span>Cliente</span><b>{sale.customer.name}</b></div>
+      )}
+      {/* Cupom oculto na tela — vira o conteúdo da página só na impressão */}
+      {!cancelled && <pre className="s-receipt s-cupom s-print-only">{buildCupom(sale, STORE)}</pre>}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+        {!cancelled && <SBtn ghost onClick={() => window.print()}>Imprimir cupom</SBtn>}
+        <SBtn primary onClick={onClose}>Fechar</SBtn>
+      </div>
+    </SModal>
   );
 }
 
