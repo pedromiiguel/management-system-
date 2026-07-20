@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { clearSession, getToken } from './auth';
 
-export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' });
+// `??` não cobre o caso documentado no .env.example: VITE_API_URL definido e
+// vazio (dev local) precisa cair no proxy '/api' do Vite, não virar baseURL ''.
+export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
 
 api.interceptors.request.use((config) => {
   const token = getToken();

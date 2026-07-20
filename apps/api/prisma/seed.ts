@@ -5,17 +5,21 @@ import { ALL_PERMISSIONS, SettingKey, StockPolicy } from '@beverage/shared';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Papel Administrator com todas as permissões (Seção 3.1)
+  // Papel Administrator com todas as permissões (Seção 3.1). Id fixo: o JWT é
+  // stateless e embarca o id do usuário — a suíte E2E loga uma vez e reutiliza
+  // o token por vários resets de schema; um id realeatorizado a cada reset
+  // invalidaria esse token contra o operatorId das vendas.
   const adminRole = await prisma.role.upsert({
     where: { name: 'Administrador' },
     update: { permissions: ALL_PERMISSIONS },
-    create: { name: 'Administrador', permissions: ALL_PERMISSIONS, system: true },
+    create: { id: 'seed-role-admin', name: 'Administrador', permissions: ALL_PERMISSIONS, system: true },
   });
 
   await prisma.user.upsert({
     where: { login: 'admin' },
     update: {},
     create: {
+      id: 'seed-user-admin',
       name: 'Administrador',
       login: 'admin',
       passwordHash: await argon2.hash(process.env.ADMIN_PASSWORD ?? 'admin123'),
@@ -97,6 +101,40 @@ async function main() {
             unitCost: p.purchasePrice,
             note: 'Carga inicial (seed)',
           },
+        });
+      }
+    }
+
+    // Produto sem saldo — exercita o comportamento de venda sem estoque (BR-03).
+    await prisma.product.upsert({
+      where: { sku: 'RFR-ZER-350' },
+      update: {},
+      create: {
+        sku: 'RFR-ZER-350',
+        ean: '7891234500009',
+        name: 'Refrigerante Zero Estoque 350ml',
+        unit: 'un',
+        purchasePrice: 3.0,
+        salePrice: 5.0,
+        currentStock: 0,
+        minimumStock: 20,
+      },
+    });
+
+    // Cliente ativo — necessário para exercitar o fluxo de fiado, que exige cliente.
+    await prisma.customer.upsert({
+      where: { id: 'seed-customer-fiado' },
+      update: {},
+      create: { id: 'seed-customer-fiado', name: 'Cliente Fiado Teste', active: true },
+    });
+
+    // Caixa aberto — venda em dinheiro exige um caixa aberto para concluir (BR-06).
+    const openRegister = await prisma.cashRegister.findFirst({ where: { status: 'OPEN' } });
+    if (!openRegister) {
+      const admin = await prisma.user.findUnique({ where: { login: 'admin' } });
+      if (admin) {
+        await prisma.cashRegister.create({
+          data: { operatorId: admin.id, openingBalance: 100 },
         });
       }
     }
