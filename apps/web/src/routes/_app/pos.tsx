@@ -98,7 +98,14 @@ function PosPage() {
   });
   const openSaleRef = useRef(openSale.mutate);
   openSaleRef.current = openSale.mutate;
+  // Guarda contra o duplo-disparo de efeito do StrictMode em dev: sem isso,
+  // dois POST /sales concorrentes no mount podem criar duas vendas
+  // IN_PROGRESS para o mesmo operador, já que open() não tem lock contra
+  // corrida entre o "existe uma em andamento?" e o create.
+  const hasOpenedRef = useRef(false);
   useEffect(() => {
+    if (hasOpenedRef.current) return;
+    hasOpenedRef.current = true;
     openSaleRef.current();
   }, []);
 
@@ -154,18 +161,22 @@ function PosPage() {
   const commitQuantity = useCallback(
     (itemId: string, quantity: number) => {
       delete qtyPending.current[itemId];
-      updateItem.mutate(
-        { itemId, quantity },
-        {
-          onSettled: () =>
-            setPendingQty((prev) => {
-              if (!(itemId in prev)) return prev;
-              const next = { ...prev };
-              delete next[itemId];
-              return next;
-            }),
-        },
-      );
+      // mutateAsync (não mutate): flushPendingQuantity precisa poder esperar o
+      // commit terminar antes de finalizar/remover/cancelar/descontar — do
+      // contrário essas ações correm em paralelo com o PATCH em vez de depois
+      // dele. Erro já vira toast via onError da mutation; aqui só evita que
+      // uma falha rejeite o Promise.all de flushPendingQuantity.
+      return updateItem
+        .mutateAsync({ itemId, quantity })
+        .catch(() => {})
+        .finally(() => {
+          setPendingQty((prev) => {
+            if (!(itemId in prev)) return prev;
+            const next = { ...prev };
+            delete next[itemId];
+            return next;
+          });
+        });
     },
     [updateItem],
   );
@@ -198,10 +209,13 @@ function PosPage() {
   // mudar o estado da venda com uma quantidade que a tela mostrou mas o
   // servidor ainda não confirmou.
   const flushPendingQuantity = useCallback(() => {
-    for (const [itemId, { quantity, timer }] of Object.entries(qtyPending.current)) {
-      clearTimeout(timer);
-      commitQuantity(itemId, quantity);
-    }
+    const pending = Object.entries(qtyPending.current);
+    return Promise.all(
+      pending.map(([itemId, { quantity, timer }]) => {
+        clearTimeout(timer);
+        return commitQuantity(itemId, quantity);
+      }),
+    );
   }, [commitQuantity]);
 
   const removeItem = useMutation({
@@ -218,7 +232,7 @@ function PosPage() {
   // Remover item (botão da linha ou atalho Del) — sempre pede confirmação.
   const handleRemove = useCallback(
     async (item: SaleItem) => {
-      flushPendingQuantity();
+      await flushPendingQuantity();
       const confirmed = await Confirm.call({
         title: 'Remover item?',
         message: (
@@ -312,8 +326,8 @@ function PosPage() {
     setActiveSuggestion(0);
   }
 
-  function finalize() {
-    flushPendingQuantity();
+  async function finalize() {
+    await flushPendingQuantity();
     if (!sale || items.length === 0) {
       toast('Adicione itens antes de finalizar', 'warn');
       return;
@@ -629,8 +643,8 @@ function PosPage() {
       )}
       {modal.kind === 'discount' && (
         <DiscountModal
-          onSubmit={(discount) => {
-            flushPendingQuantity();
+          onSubmit={async (discount) => {
+            await flushPendingQuantity();
             setDiscount.mutate(discount);
           }}
           onClose={() => {
@@ -662,8 +676,8 @@ function PosPage() {
             <SBtn ghost onClick={() => setModal({ kind: 'none' })}>Voltar</SBtn>
             <SBtn
               danger
-              onClick={() => {
-                flushPendingQuantity();
+              onClick={async () => {
+                await flushPendingQuantity();
                 cancelSale.mutate();
               }}
             >
