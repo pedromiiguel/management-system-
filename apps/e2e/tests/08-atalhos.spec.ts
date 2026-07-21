@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { resetDatabase } from './support/db';
-import { addKnownItems, ensureFreshSale, saleItemRow, scanInput } from './support/pos';
+import { addKnownItems, ensureFreshSale, pressHotkey, saleItemRow, scanInput } from './support/pos';
 import { PRODUCTS } from './support/seed-data';
 
 test.describe('atalhos de teclado', () => {
@@ -16,12 +16,12 @@ test.describe('atalhos de teclado', () => {
     page,
   }) => {
     await expect(scanInput(page)).toBeFocused();
-    await page.keyboard.press('F2');
+    await pressHotkey(page, 'F2');
     await expect(page.getByRole('dialog', { name: 'Buscar produto (F2)' })).toBeVisible();
   });
 
   test('a tecla de desconto (F4) abre o desconto', async ({ page }) => {
-    await page.keyboard.press('F4');
+    await pressHotkey(page, 'F4');
     await expect(page.getByRole('dialog', { name: 'Desconto na venda (F4)' })).toBeVisible();
   });
 
@@ -32,18 +32,18 @@ test.describe('atalhos de teclado', () => {
     const pix = page.getByRole('button', { name: 'Pagamento PIX' });
     const card = page.getByRole('button', { name: 'Pagamento Cartão' });
 
-    await page.keyboard.press('F6');
+    await pressHotkey(page, 'F6');
     await expect(pix).toHaveAttribute('aria-pressed', 'true');
 
-    await page.keyboard.press('F7');
+    await pressHotkey(page, 'F7');
     await expect(card).toHaveAttribute('aria-pressed', 'true');
 
-    await page.keyboard.press('F5');
+    await pressHotkey(page, 'F5');
     await expect(cash).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('a tecla de cliente (F8) abre a seleção de cliente', async ({ page }) => {
-    await page.keyboard.press('F8');
+    await pressHotkey(page, 'F8');
     await expect(page.getByRole('dialog', { name: 'Cliente do fiado (F8)' })).toBeVisible();
   });
 
@@ -52,13 +52,13 @@ test.describe('atalhos de teclado', () => {
 
     // PIX dispensa valor recebido — espera o estado assentar antes de F10,
     // senão finalize() pode ler o `payment` de um render anterior (ainda CASH).
-    await page.keyboard.press('F6');
+    await pressHotkey(page, 'F6');
     await expect(page.getByRole('button', { name: 'Pagamento PIX' })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
 
-    await page.keyboard.press('F10');
+    await pressHotkey(page, 'F10');
     await expect(page.getByRole('dialog', { name: 'Venda concluída ✓' })).toBeVisible();
   });
 
@@ -70,7 +70,7 @@ test.describe('atalhos de teclado', () => {
     await expect(row).toBeVisible();
     await expect(scanInput(page)).toHaveValue('');
 
-    await page.keyboard.press('Delete');
+    await pressHotkey(page, 'Delete');
     const confirmDialog = page.getByRole('dialog', { name: 'Remover item?' });
     await expect(confirmDialog).toBeVisible();
     await confirmDialog.getByRole('button', { name: 'Remover' }).click();
@@ -85,18 +85,18 @@ test.describe('atalhos de teclado', () => {
     await scanInput(page).fill('abc');
     await expect(scanInput(page)).toHaveValue('abc');
 
-    await page.keyboard.press('Delete');
+    await pressHotkey(page, 'Delete');
 
     await expect(page.getByRole('dialog', { name: 'Remover item?' })).toHaveCount(0);
     await expect(saleItemRow(page, PRODUCTS.skol.name)).toBeVisible();
   });
 
   test('escape fecha o modal aberto', async ({ page }) => {
-    await page.keyboard.press('F2');
+    await pressHotkey(page, 'F2');
     const dialog = page.getByRole('dialog', { name: 'Buscar produto (F2)' });
     await expect(dialog).toBeVisible();
 
-    await page.keyboard.press('Escape');
+    await pressHotkey(page, 'Escape');
     await expect(dialog).toBeHidden();
   });
 
@@ -107,7 +107,7 @@ test.describe('atalhos de teclado', () => {
     const row = saleItemRow(page, PRODUCTS.skol.name);
     await expect(row).toBeVisible();
 
-    await page.keyboard.press('Escape');
+    await pressHotkey(page, 'Escape');
 
     await expect(page.getByRole('dialog', { name: 'Cancelar venda em andamento?' })).toBeVisible();
     // Não cancelou direto — o item continua na venda por trás do modal.
@@ -121,15 +121,15 @@ test.describe('atalhos de teclado', () => {
       'true',
     );
 
-    await page.keyboard.press('F4'); // abre o desconto
+    await pressHotkey(page, 'F4'); // abre o desconto
     const dialog = page.getByRole('dialog', { name: 'Desconto na venda (F4)' });
     await expect(dialog).toBeVisible();
 
     // Com o modal aberto, F5 (dinheiro) não deveria trocar o meio de pagamento.
-    await page.keyboard.press('F5');
+    await pressHotkey(page, 'F5');
     await expect(dialog).toBeVisible();
 
-    await page.keyboard.press('Escape');
+    await pressHotkey(page, 'Escape');
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('button', { name: 'Pagamento PIX' })).toHaveAttribute(
       'aria-pressed',

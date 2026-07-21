@@ -65,7 +65,7 @@ test.describe('abertura de venda, campo de código e busca', () => {
     const dialog = page.getByRole('dialog', { name: 'Buscar produto (F2)' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('textbox')).toHaveValue('0000000000000');
-    await expect(page.locator('.s-toast')).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(0);
   });
 
   test('digitar duas letras ou mais exibe sugestões de produto', async ({ page }) => {

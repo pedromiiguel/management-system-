@@ -5,6 +5,7 @@ import {
   addKnownItems,
   discountValue,
   ensureFreshSale,
+  pressHotkey,
   removeItemButton,
   saleItemRow,
   scanInput,
@@ -70,7 +71,7 @@ test.describe('itens, desconto e cancelamento', () => {
   test('desconto em valor é aplicado à venda e o total é recalculado', async ({ page }) => {
     await addKnownItems(page, [{ code: PRODUCTS.skol.ean, quantity: 2 }]);
 
-    await page.keyboard.press('F4');
+    await pressHotkey(page, 'F4');
     const dialog = page.getByRole('dialog', { name: 'Desconto na venda (F4)' });
     await dialog.getByRole('textbox').fill('1,00');
     await dialog.getByRole('button', { name: 'Aplicar' }).click();
@@ -84,7 +85,7 @@ test.describe('itens, desconto e cancelamento', () => {
   test('desconto em percentual é aplicado à venda e o total é recalculado', async ({ page }) => {
     await addKnownItems(page, [{ code: PRODUCTS.skol.ean, quantity: 2 }]);
 
-    await page.keyboard.press('F4');
+    await pressHotkey(page, 'F4');
     const dialog = page.getByRole('dialog', { name: 'Desconto na venda (F4)' });
     await dialog.getByRole('button', { name: 'Percentual (%)' }).click();
     await dialog.getByRole('textbox').fill('20');

@@ -422,7 +422,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={show}>
       {children}
       {toast && (
-        <div className={clsx('s-toast', toast.tone === 'warn' && 'is-warn', toast.tone === 'danger' && 'is-danger')}>
+        <div
+          role="status"
+          className={clsx('s-toast', toast.tone === 'warn' && 'is-warn', toast.tone === 'danger' && 'is-danger')}
+        >
           {toast.message}
         </div>
       )}

@@ -6,6 +6,7 @@ import {
   decreaseQtyButton,
   ensureFreshSale,
   increaseQtyButton,
+  pressHotkey,
   qtyInput,
   removeItemButton,
   saleItemRow,
@@ -98,7 +99,7 @@ test.describe('quantidade — estado otimista, debounce e flush', () => {
 
     await expect(page.getByText(/Venda #[A-Z0-9]{6} em andamento/)).toBeVisible();
     await expect(page.locator('[data-testid^="sale-item-"]')).toHaveCount(0);
-    await expect(page.locator('.s-toast')).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(0);
   });
 
   test('alterar a quantidade e aplicar desconto em seguida calcula o desconto sobre a quantidade nova', async ({
@@ -111,7 +112,7 @@ test.describe('quantidade — estado otimista, debounce e flush', () => {
     await expect(qtyInput(row)).toHaveValue('3');
 
     // Abre o desconto (F4) sem esperar o debounce da quantidade assentar.
-    await page.keyboard.press('F4');
+    await pressHotkey(page, 'F4');
     const dialog = page.getByRole('dialog', { name: 'Desconto na venda (F4)' });
     await dialog.getByRole('button', { name: 'Percentual (%)' }).click();
     await dialog.getByRole('textbox').fill('10');

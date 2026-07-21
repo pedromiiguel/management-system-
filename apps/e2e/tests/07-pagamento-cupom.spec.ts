@@ -1,7 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { resetDatabase } from './support/db';
 import { brl, cupomBrl } from './support/format';
-import { addKnownItems, changeValue, ensureFreshSale, scanInput, selectedCustomer, totalValue } from './support/pos';
+import {
+  addKnownItems,
+  changeValue,
+  ensureFreshSale,
+  pressHotkey,
+  scanInput,
+  selectedCustomer,
+  totalValue,
+} from './support/pos';
 import { CUSTOMER_NAME, PRODUCTS } from './support/seed-data';
 
 test.describe('pagamento, conclusão e cupom', () => {
@@ -73,13 +81,13 @@ test.describe('pagamento, conclusão e cupom', () => {
     // sem escolher, para chegar ao estado "fiado selecionado, sem cliente".
     const customerDialog = page.getByRole('dialog', { name: 'Cliente do fiado (F8)' });
     await expect(customerDialog).toBeVisible();
-    await page.keyboard.press('Escape');
+    await pressHotkey(page, 'Escape');
     await expect(customerDialog).toBeHidden();
 
     await page.getByRole('button', { name: 'Finalizar venda' }).click();
 
     await expect(customerDialog).toBeVisible();
-    await expect(page.locator('.s-toast')).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(0);
   });
 
   test('venda em fiado é concluída após escolher o cliente do seed', async ({ page }) => {
