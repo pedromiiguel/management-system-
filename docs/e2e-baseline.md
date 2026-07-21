@@ -7,20 +7,25 @@
 
 ## Resultado
 
-A suíte completa (`npm run test:e2e` na raiz) rodou **três vezes consecutivas, do
-zero**, sem nenhuma falha:
+A suíte completa (`npm run test:e2e` na raiz) rodou **seis vezes consecutivas
+no total, três delas depois da última correção de flakiness (ver item 5
+abaixo)**, sem nenhuma falha remanescente:
 
 | Execução | Resultado    | Servidores           | Duração (Playwright) |
 | -------- | ------------ | --------------------- | --------------------- |
 | 1        | 55/55 passou | reaproveitados        | 1.1min                |
 | 2        | 55/55 passou | reaproveitados        | 1.1min                |
 | 3        | 55/55 passou | subiram do zero (Vite + Nest, sem processo prévio na 3000/5173) | 1.2min (75s parede) |
+| 4        | 54/55 — 1 falha intermitente (F10, ver item 5) | reaproveitados | 1.3min |
+| 5        | 55/55 passou (após a correção do item 5) | reaproveitados | 1.2min |
+| 6        | 55/55 passou | reaproveitados        | 1.2min                |
 
-Nenhuma falha intermitente em nenhuma das três rodadas. A terceira execução
-partiu com as portas 3000 e 5173 livres, forçando o Playwright a subir os
-dois servidores de desenvolvimento (`webServer`) do zero antes da suíte
-rodar — cobre o caminho "servidor não estava no ar" além do caminho normal
-de reaproveitamento.
+A terceira execução partiu com as portas 3000 e 5173 livres, forçando o
+Playwright a subir os dois servidores de desenvolvimento (`webServer`) do
+zero antes da suíte rodar — cobre o caminho "servidor não estava no ar"
+além do caminho normal de reaproveitamento. A execução 4 pegou a
+instabilidade descrita no item 5 da lista de regressões abaixo; as duas
+seguintes confirmam a correção.
 
 ## Distribuição por arquivo
 
@@ -67,10 +72,17 @@ valioso (história 38 / quantidade + finalização imediata):
    de rota (`_app.tsx`) propaga. Corrigido para ler `Route.useSearch()` e
    navegar (`navigate({ href })`) para o destino original, com validação
    contra open redirect.
+5. **Entrega instável de teclas de função via `page.keyboard.press`.** Não é
+   um bug do PDV, mas da suíte: F10 (e, com menor probabilidade, outras
+   teclas de função) ocasionalmente não chegava ao listener de atalhos —
+   falha intermitente, ~1 em 7 rodadas completas. Trocado por um
+   `KeyboardEvent` sintético despachado direto no `document`
+   (`tests/support/pos.ts#pressHotkey`), que entrega de forma determinística
+   sem depender do pipeline de input do SO/CDP para teclas de função.
 
-Nenhuma dessas correções muda a experiência do operador — o comportamento
-final é o que a spec sempre descreveu como correto. A suíte só tornou os
-desvios visíveis.
+Nenhuma das correções de código do PDV (itens 1-4) muda a experiência do
+operador — o comportamento final é o que a spec sempre descreveu como
+correto. A suíte só tornou os desvios visíveis.
 
 ## Regra de interpretação para a refatoração
 

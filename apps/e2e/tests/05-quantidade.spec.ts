@@ -6,6 +6,7 @@ import {
   decreaseQtyButton,
   ensureFreshSale,
   increaseQtyButton,
+  pressHotkey,
   qtyInput,
   removeItemButton,
   saleItemRow,
@@ -111,7 +112,7 @@ test.describe('quantidade — estado otimista, debounce e flush', () => {
     await expect(qtyInput(row)).toHaveValue('3');
 
     // Abre o desconto (F4) sem esperar o debounce da quantidade assentar.
-    await page.keyboard.press('F4');
+    await pressHotkey(page, 'F4');
     const dialog = page.getByRole('dialog', { name: 'Desconto na venda (F4)' });
     await dialog.getByRole('button', { name: 'Percentual (%)' }).click();
     await dialog.getByRole('textbox').fill('10');

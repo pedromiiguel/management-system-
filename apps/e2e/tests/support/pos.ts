@@ -5,6 +5,20 @@ export function scanInput(page: Page): Locator {
   return page.getByLabel('Código de barras, SKU ou nome do produto');
 }
 
+/**
+ * Dispara um atalho global (F2/F4/F5-F8/F10/Delete/Escape) via KeyboardEvent
+ * sintético no document, em vez de page.keyboard.press. Teclas de função
+ * despachadas no nível do SO/CDP mostraram-se ocasionalmente engolidas antes
+ * de chegar à página (flakiness rara, não relacionada ao código do PDV);
+ * despachar direto no document entrega de forma determinística ao listener
+ * da lib de atalhos, sem depender de foco real de janela.
+ */
+export async function pressHotkey(page: Page, key: string): Promise<void> {
+  await page.evaluate((k) => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: k, code: k, bubbles: true, cancelable: true }));
+  }, key);
+}
+
 export function totalValue(page: Page): Locator {
   return page.getByTestId('pos-total');
 }
