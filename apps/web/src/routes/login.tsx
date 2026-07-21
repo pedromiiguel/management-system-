@@ -68,14 +68,14 @@ function LoginPage() {
             <div>
               <div className="s-label">Usuário</div>
               <div className="s-input">
-                <input placeholder="seu login" autoFocus {...register('login')} />
+                <input placeholder="seu login" aria-label="Usuário" autoFocus {...register('login')} />
               </div>
               {errors.login && <div className="s-error">{errors.login.message}</div>}
             </div>
             <div>
               <div className="s-label">Senha</div>
               <div className="s-input">
-                <input type="password" placeholder="••••••••" {...register('password')} />
+                <input type="password" placeholder="••••••••" aria-label="Senha" {...register('password')} />
               </div>
               {errors.password && <div className="s-error">{errors.password.message}</div>}
             </div>

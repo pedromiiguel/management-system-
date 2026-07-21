@@ -378,6 +378,7 @@ function PosPage() {
               <input
                 ref={scanRef}
                 autoFocus
+                aria-label="Código de barras, SKU ou nome do produto"
                 value={scan}
                 onChange={(e) => {
                   setScan(e.target.value);
@@ -411,10 +412,12 @@ function PosPage() {
               <SKbd>F2</SKbd>
             </div>
             {suggestOpen && (
-              <div className="s-suggest">
+              <div className="s-suggest" role="listbox" aria-label="Sugestões de produto">
                 {suggestions.map((p, i) => (
                   <div
                     key={p.id}
+                    role="option"
+                    aria-selected={i === highlighted}
                     className={clsx('s-suggest-item', i === highlighted && 'is-active')}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => pickSuggestion(p)}
@@ -439,6 +442,7 @@ function PosPage() {
                 const quantity = pendingQty[item.id] ?? item.quantity;
                 return {
                   key: item.id,
+                  testId: `sale-item-${item.id}`,
                   highlight: item.id === lastAddedId,
                   onClick: () => setSelectedId(item.id),
                   cells: [
@@ -457,7 +461,9 @@ function PosPage() {
                       }}
                     />,
                     formatBRL(item.unitPrice),
-                    <b key="s">{formatBRL(item.unitPrice * quantity)}</b>,
+                    <b key="s" data-testid={`sale-item-${item.id}-subtotal`}>
+                      {formatBRL(item.unitPrice * quantity)}
+                    </b>,
                     <SIconBtn
                       key="del"
                       icon="trash"
@@ -491,7 +497,7 @@ function PosPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <SCard pad={18} style={{ textAlign: 'center' }}>
             <div className="s-stat-label">TOTAL DA VENDA</div>
-            <div className="s-total">{formatBRL(displayTotal)}</div>
+            <div className="s-total" data-testid="pos-total">{formatBRL(displayTotal)}</div>
             <div className="s-dim" style={{ fontSize: 13 }}>
               {itemCount} {itemCount === 1 ? 'item' : 'itens'} · {items.length}{' '}
               {items.length === 1 ? 'produto' : 'produtos'}
@@ -502,11 +508,13 @@ function PosPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13.5 }}>Desconto</span>
               <span className="s-dim" style={{ fontSize: 13 }}>
-                {sale?.discountValue
-                  ? sale.discountType === 'PERCENT'
-                    ? `${sale.discountValue}%`
-                    : formatBRL(sale.discountValue)
-                  : '—'}{' '}
+                <span data-testid="pos-discount-value">
+                  {sale?.discountValue
+                    ? sale.discountType === 'PERCENT'
+                      ? `${sale.discountValue}%`
+                      : formatBRL(sale.discountValue)
+                    : '—'}
+                </span>{' '}
                 <SKbd>F4</SKbd>
               </span>
             </div>
@@ -515,15 +523,17 @@ function PosPage() {
               <span style={{ fontSize: 13.5 }}>Taxa de serviço (10%)</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {serviceFee && (
-                  <span className="s-dim" style={{ fontSize: 13 }}>{formatBRL(feeValue)}</span>
+                  <span className="s-dim" style={{ fontSize: 13 }} data-testid="pos-service-fee-value">
+                    {formatBRL(feeValue)}
+                  </span>
                 )}
-                <SToggle on={serviceFee} onChange={setServiceFee} />
+                <SToggle on={serviceFee} onChange={setServiceFee} ariaLabel="Taxa de serviço" />
               </span>
             </div>
             <div className="s-divider" />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13.5 }}>Emitir nota fiscal</span>
-              <SToggle on={withInvoice} onChange={setWithInvoice} />
+              <SToggle on={withInvoice} onChange={setWithInvoice} ariaLabel="Emitir nota fiscal" />
             </div>
           </SCard>
 
@@ -545,6 +555,8 @@ function PosPage() {
                   focusScan();
                 }}
                 type="button"
+                aria-label={`Pagamento ${label}`}
+                aria-pressed={payment === method}
               >
                 <b>{label}</b>
                 <SKbd>{key}</SKbd>
@@ -562,6 +574,7 @@ function PosPage() {
                     onChange={(e) => setReceived(maskBRL(e.target.value))}
                     inputMode="numeric"
                     placeholder="0,00"
+                    aria-label="Valor recebido"
                     style={{ textAlign: 'right', fontWeight: 700 }}
                     onKeyDown={(e) => e.key === 'Enter' && finalize()}
                   />
@@ -569,7 +582,7 @@ function PosPage() {
               </div>
               <div className="s-kv is-troco">
                 <span>Troco</span>
-                <b>{change !== null && change >= 0 ? formatBRL(change) : '—'}</b>
+                <b data-testid="pos-change">{change !== null && change >= 0 ? formatBRL(change) : '—'}</b>
               </div>
             </SCard>
           )}
@@ -578,7 +591,7 @@ function PosPage() {
             <SCard pad={12}>
               <div className="s-kv">
                 <span>Cliente</span>
-                <b>{customer?.name ?? '—'}</b>
+                <b data-testid="pos-selected-customer">{customer?.name ?? '—'}</b>
               </div>
               <SBtn ghost style={{ width: '100%', marginTop: 6 }} onClick={() => setModal({ kind: 'customer' })}>
                 {customer ? 'Trocar cliente' : 'Selecionar cliente'}
@@ -761,6 +774,7 @@ function QtyStepper({
       <input
         value={raw}
         inputMode="numeric"
+        aria-label="Quantidade"
         onChange={(e) => setRaw(e.target.value.replace(/\D/g, ''))}
         onBlur={() => {
           commitTyped();

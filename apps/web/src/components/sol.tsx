@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useState,
   type CSSProperties,
   type MouseEvent,
@@ -176,7 +177,13 @@ export function SChip({
 export interface STableProps {
   cols: ReactNode[];
   widths: string;
-  rows: { key: string; cells: ReactNode[]; highlight?: boolean; onClick?: () => void }[];
+  rows: {
+    key: string;
+    cells: ReactNode[];
+    highlight?: boolean;
+    onClick?: () => void;
+    testId?: string;
+  }[];
   align?: (CSSProperties['textAlign'] | null)[];
   dense?: boolean;
   emptyText?: string;
@@ -198,6 +205,7 @@ export function STable({ cols, widths, rows, align, dense, emptyText }: STablePr
       {rows.map((row) => (
         <div
           key={row.key}
+          data-testid={row.testId}
           className={clsx('s-tr', row.highlight && 'is-hl', row.onClick && 'is-selectable')}
           style={{ gridTemplateColumns: widths }}
           onClick={row.onClick}
@@ -272,14 +280,22 @@ export function SProgress({ pct, height = 10 }: { pct: number; height?: number }
 export function SToggle({
   on,
   label,
+  ariaLabel,
   onChange,
 }: {
   on: boolean;
   label?: string;
+  ariaLabel?: string;
   onChange?: (on: boolean) => void;
 }) {
   return (
-    <button className="s-toggle-wrap" onClick={() => onChange?.(!on)} type="button">
+    <button
+      className="s-toggle-wrap"
+      onClick={() => onChange?.(!on)}
+      type="button"
+      aria-label={ariaLabel ?? label}
+      aria-pressed={on}
+    >
       <span className={clsx('s-toggle', on && 'is-on')}>
         <span className="s-knob" />
       </span>
@@ -361,10 +377,17 @@ export function SModal({
   children: ReactNode;
   width?: number;
 }) {
+  const titleId = useId();
   return (
     <div className="s-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="s-modal" style={width ? { width } : undefined}>
-        <div className="s-modal-title">{title}</div>
+      <div
+        className="s-modal"
+        style={width ? { width } : undefined}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
+        <div className="s-modal-title" id={titleId}>{title}</div>
         {children}
       </div>
     </div>
