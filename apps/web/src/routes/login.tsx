@@ -2,20 +2,32 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { loginSchema, type LoginInput } from '@beverage/shared';
 import { SBtn, SolIcon } from '../components/sol';
 import { api, apiErrorMessage } from '../lib/api';
 import { isAuthenticated, setSession, type SessionUser } from '../lib/auth';
 
+const loginSearchSchema = z.object({ redirect: z.string().optional() });
+
 export const Route = createFileRoute('/login')({
+  validateSearch: loginSearchSchema,
   beforeLoad: () => {
     if (isAuthenticated()) throw redirect({ to: '/pos' });
   },
   component: LoginPage,
 });
 
+// Só aceita destino relativo interno (começando com um único "/") — evita
+// open redirect a partir do search param.
+function safeRedirectTarget(target: string | undefined): string {
+  if (target && target.startsWith('/') && !target.startsWith('//')) return target;
+  return '/pos';
+}
+
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect: redirectTo } = Route.useSearch();
   const {
     register,
     handleSubmit,
@@ -32,7 +44,7 @@ function LoginPage() {
     },
     onSuccess: (data) => {
       setSession(data.accessToken, data.user);
-      void navigate({ to: '/pos' });
+      void navigate({ href: safeRedirectTarget(redirectTo), replace: true });
     },
   });
 
