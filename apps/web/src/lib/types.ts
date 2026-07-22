@@ -1,65 +1,16 @@
-import type {
-  CashMovementType,
-  CashRegisterStatus,
-  PaymentMethod,
-  SaleStatus,
-} from '@beverage/shared';
+import type { CashMovementType, CashRegisterStatus, PaymentMethod } from '@beverage/shared';
 
-export interface Product {
-  id: string;
-  sku: string;
-  ean: string | null;
-  name: string;
-  unit: string;
-  purchasePrice: number;
-  salePrice: number;
-  currentStock: number;
-  minimumStock: number;
-  active: boolean;
-}
+// Product, Sale, SaleItem e Customer são definidos em @/domain/models/sale —
+// única fonte da verdade (ADR 0003/0004). Reexportados aqui só porque
+// financial.tsx, products.tsx, reports.tsx e stock.tsx ainda importam deste
+// arquivo e estão fora do escopo do piloto de Clean Architecture.
+export type { Product, Sale, SaleItem, Customer } from '@/domain/models/sale';
 
 export interface Paginated<T> {
   items: T[];
   total: number;
   page: number;
   perPage: number;
-}
-
-export interface SaleItem {
-  id: string;
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  unitCost: number;
-  product: { name: string; sku: string; ean: string | null; unit: string };
-}
-
-export interface Sale {
-  id: string;
-  status: SaleStatus;
-  subtotal: number;
-  total: number;
-  discountType: 'AMOUNT' | 'PERCENT' | null;
-  discountValue: number | null;
-  paymentMethod: PaymentMethod | null;
-  amountPaid: number | null;
-  change: number | null;
-  serviceFee: number | null;
-  withInvoice: boolean;
-  openedAt: string;
-  completedAt: string | null;
-  cancelledAt: string | null;
-  items: SaleItem[];
-  customer: { id: string; name: string } | null;
-  operator: { id: string; name: string };
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  contact: string | null;
-  active: boolean;
-  openBalance: number;
 }
 
 export interface CashMovement {

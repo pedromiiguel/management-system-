@@ -77,7 +77,9 @@ ser confundido com omissão numa revisão futura.
 
 ### 4. Onde cada coisa mora
 
-- **domain/models** (`apps/web/src/domain/models/pos.ts`): **não migra** os
+- **domain/models** (`apps/web/src/domain/models/pos.ts`) — **resolvido em
+  [ADR 0005](0005-centraliza-tipos-em-domain.md)**, ler lá; texto abaixo é o
+  registro histórico do que foi decidido aqui em 2026-07-21: **não migra** os
   tipos, ao contrário do que a intenção original desta seção previa —
   reexporta `Sale`, `SaleItem`, `Product`, `Customer` de `lib/types.ts` (mais
   `AddSaleItemInput` local — ver nota abaixo) e `UpdateSaleItemInput`,
