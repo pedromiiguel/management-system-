@@ -1,0 +1,104 @@
+import { expect, type Locator, type Page } from '@playwright/test';
+
+/** Campo de código — vive focado o tempo todo; scanner USB emula teclado + Enter. */
+export function scanInput(page: Page): Locator {
+  return page.getByLabel('Código de barras, SKU ou nome do produto');
+}
+
+export function totalValue(page: Page): Locator {
+  return page.getByTestId('sale-total');
+}
+
+export function changeValue(page: Page): Locator {
+  return page.getByTestId('sale-change');
+}
+
+export function discountValue(page: Page): Locator {
+  return page.getByTestId('sale-discount-value');
+}
+
+export function serviceFeeValue(page: Page): Locator {
+  return page.getByTestId('sale-service-fee-value');
+}
+
+export function selectedCustomer(page: Page): Locator {
+  return page.getByTestId('sale-selected-customer');
+}
+
+/** Linha da venda pelo nome do produto — estável independente da ordem de renderização. */
+export function saleItemRow(page: Page, productName: string): Locator {
+  return page.locator('[data-testid^="sale-item-"]').filter({ hasText: productName });
+}
+
+/**
+ * Campo de quantidade digitável de uma linha — `exact: true` porque os
+ * botões +/- também têm nome acessível contendo "quantidade" ("Aumentar
+ * quantidade"/"Diminuir quantidade") e casariam por substring.
+ */
+export function qtyInput(row: Locator): Locator {
+  return row.getByLabel('Quantidade', { exact: true });
+}
+
+export function increaseQtyButton(row: Locator): Locator {
+  return row.getByRole('button', { name: 'Aumentar quantidade' });
+}
+
+export function decreaseQtyButton(row: Locator): Locator {
+  return row.getByRole('button', { name: 'Diminuir quantidade' });
+}
+
+export function removeItemButton(row: Locator): Locator {
+  return row.getByRole('button', { name: 'Remover item' });
+}
+
+/** Abre a frente de caixa e aguarda a venda em andamento + foco no campo de código. */
+export async function openSalePage(page: Page): Promise<void> {
+  await page.goto('/sale');
+  await expect(page.getByText(/Venda #[A-Z0-9]{6} em andamento/)).toBeVisible();
+  await expect(scanInput(page)).toBeFocused();
+}
+
+/**
+ * Só existe uma venda em andamento por operador — o backend a retoma a cada
+ * `POST /sales`. Como o reset de banco é por arquivo (não por teste, ver ADR
+ * 0001), cada teste que precisa de um carrinho vazio cancela qualquer venda
+ * deixada por um teste anterior no mesmo arquivo, sempre pelo navegador.
+ */
+export async function ensureFreshSale(page: Page): Promise<void> {
+  await openSalePage(page);
+  const hasItems = (await page.locator('[data-testid^="sale-item-"]').count()) > 0;
+  if (!hasItems) return;
+
+  await page.getByRole('button', { name: 'Cancelar venda' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Cancelar venda em andamento?' });
+  await dialog.getByRole('button', { name: 'Cancelar venda' }).click();
+
+  await expect(page.getByText(/Venda #[A-Z0-9]{6} em andamento/)).toBeVisible();
+  await expect(page.locator('[data-testid^="sale-item-"]')).toHaveCount(0);
+  await expect(scanInput(page)).toBeFocused();
+}
+
+/** Digita um código (com atalho opcional de quantidade "N*código") e confirma com Enter. */
+export async function addItemByCode(page: Page, code: string, quantity?: number): Promise<void> {
+  const input = scanInput(page);
+  const value = quantity ? `${quantity}*${code}` : code;
+  await input.fill(value);
+  await input.press('Enter');
+}
+
+/**
+ * Monta uma venda com itens conhecidos do seed — forma reutilizável pelos
+ * demais arquivos da suíte (04-08). Aguarda o campo limpar e recuperar foco
+ * após cada item, sinal de que o servidor confirmou a inclusão.
+ */
+export async function addKnownItems(
+  page: Page,
+  items: { code: string; quantity?: number }[],
+): Promise<void> {
+  const input = scanInput(page);
+  for (const item of items) {
+    await addItemByCode(page, item.code, item.quantity);
+    await expect(input).toHaveValue('');
+    await expect(input).toBeFocused();
+  }
+}

@@ -10,7 +10,7 @@ import {
   removeItemButton,
   saleItemRow,
   totalValue,
-} from './support/pos';
+} from './support/sale';
 import { PRODUCTS } from './support/seed-data';
 
 test.describe('quantidade — estado otimista, debounce e flush', () => {

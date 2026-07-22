@@ -15,7 +15,7 @@ setup('autentica uma vez e persiste a sessão', async ({ page }) => {
   await page.getByLabel('Senha').fill(ADMIN.password);
   await page.getByRole('button', { name: 'Entrar' }).click();
 
-  await expect(page).toHaveURL(/\/pos$/);
+  await expect(page).toHaveURL(/\/sale$/);
   await expect(page.getByText(/Venda #[A-Z0-9]{6} em andamento/)).toBeVisible();
 
   await page.context().storageState({ path: AUTH_FILE });

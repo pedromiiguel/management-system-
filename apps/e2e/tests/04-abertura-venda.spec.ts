@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { resetDatabase } from './support/db';
-import { addKnownItems, ensureFreshSale, qtyInput, saleItemRow, scanInput } from './support/pos';
+import { addKnownItems, ensureFreshSale, qtyInput, saleItemRow, scanInput } from './support/sale';
 import { PRODUCTS } from './support/seed-data';
 
 test.describe('abertura de venda, campo de código e busca', () => {

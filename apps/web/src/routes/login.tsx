@@ -13,7 +13,7 @@ const loginSearchSchema = z.object({ redirect: z.string().optional() });
 export const Route = createFileRoute('/login')({
   validateSearch: loginSearchSchema,
   beforeLoad: () => {
-    if (isAuthenticated()) throw redirect({ to: '/pos' });
+    if (isAuthenticated()) throw redirect({ to: '/sale' });
   },
   component: LoginPage,
 });
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/login')({
 // open redirect a partir do search param.
 function safeRedirectTarget(target: string | undefined): string {
   if (target && target.startsWith('/') && !target.startsWith('//')) return target;
-  return '/pos';
+  return '/sale';
 }
 
 function LoginPage() {

@@ -12,7 +12,7 @@ test.describe('autenticação e guarda de rota', () => {
   });
 
   test('acessar uma rota protegida sem sessão redireciona para o login', async ({ page }) => {
-    await page.goto('/pos');
+    await page.goto('/sale');
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -39,7 +39,7 @@ test.describe('autenticação e guarda de rota', () => {
     await expect(page).toHaveURL(/\/login/);
 
     // Sem sessão criada, uma rota protegida continua mandando para o login.
-    await page.goto('/pos');
+    await page.goto('/sale');
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -50,7 +50,7 @@ test.describe('autenticação e guarda de rota', () => {
     await page.getByLabel('Usuário').fill(ADMIN.login);
     await page.getByLabel('Senha').fill(ADMIN.password);
     await page.getByRole('button', { name: 'Entrar' }).click();
-    await expect(page).toHaveURL(/\/pos$/);
+    await expect(page).toHaveURL(/\/sale$/);
 
     await page.getByRole('button', { name: 'sair' }).click();
     await expect(page).toHaveURL(/\/login/);
@@ -60,7 +60,7 @@ test.describe('autenticação e guarda de rota', () => {
     await expect(page).toHaveURL(/\/login/);
 
     // E acessar a rota protegida de novo, direto, também redireciona.
-    await page.goto('/pos');
+    await page.goto('/sale');
     await expect(page).toHaveURL(/\/login/);
   });
 });

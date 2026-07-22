@@ -1,0 +1,22 @@
+import { AddSaleItemHandler } from '@/data/handlers/sale/add-sale-item-handler';
+import { CancelSaleHandler } from '@/data/handlers/sale/cancel-sale-handler';
+import { CompleteSaleHandler } from '@/data/handlers/sale/complete-sale-handler';
+import { CreateCustomerHandler } from '@/data/handlers/sale/create-customer-handler';
+import { DeleteSaleItemHandler } from '@/data/handlers/sale/delete-sale-item-handler';
+import { OpenSaleHandler } from '@/data/handlers/sale/open-sale-handler';
+import { SearchCustomerHandler } from '@/data/handlers/sale/search-customer-handler';
+import { SearchProductHandler } from '@/data/handlers/sale/search-product-handler';
+import { SetSaleDiscountHandler } from '@/data/handlers/sale/set-sale-discount-handler';
+import { UpdateSaleItemQuantityHandler } from '@/data/handlers/sale/update-sale-item-quantity-handler';
+import { httpClient } from '@/main/factories/http/make-http-client';
+
+export const makeSearchProduct = () => new SearchProductHandler(httpClient);
+export const makeOpenSale = () => new OpenSaleHandler(httpClient);
+export const makeAddSaleItem = () => new AddSaleItemHandler(httpClient);
+export const makeUpdateSaleItemQuantity = () => new UpdateSaleItemQuantityHandler(httpClient);
+export const makeDeleteSaleItem = () => new DeleteSaleItemHandler(httpClient);
+export const makeSetSaleDiscount = () => new SetSaleDiscountHandler(httpClient);
+export const makeCancelSale = () => new CancelSaleHandler(httpClient);
+export const makeCompleteSale = () => new CompleteSaleHandler(httpClient);
+export const makeSearchCustomer = () => new SearchCustomerHandler(httpClient);
+export const makeCreateCustomer = () => new CreateCustomerHandler(httpClient);
