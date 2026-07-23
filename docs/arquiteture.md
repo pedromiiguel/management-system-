@@ -39,20 +39,25 @@ Por página/feature:
 ```
 presentation/
   components/              # componentes GLOBAIS — usados por mais de um flow
-    {Componente}/
-      {Componente}.tsx
-      {Componente}.types.ts   # opcional — tipagens que não cabem inline
+    {Componente}/          # pasta MVVM + barrel — ver componentes-mvvm.md
+      {Componente}.tsx        # ViewModel (export público)
+      {Componente}.view.tsx   # View — JSX puro
+      {Componente}.model.ts   # Model — estado + dados. Opcional (se houver estado)
+      {Componente}.types.ts   # tipos próprios
       {Componente}.styles.ts  # opcional — quando o CSS cresce muito
+      index.ts                # barrel — sempre
+  hooks/                    # hooks GLOBAIS reutilizáveis (ex.: useDebounce) + barrel
   constants/                # constantes GLOBAIS — usadas por mais de um flow/componente
-  {flow}/
-    components/             # componentes LOCAIS — exclusivos deste flow
-      {Componente}.tsx
-    flows/
-    hooks/
-    context/
-    providers/
-    constants/               # constantes LOCAIS — exclusivas deste flow
-    assets/
+  flows/                    # cada flow em sua própria pasta (alias @flows)
+    {flow}/                 # ex.: sale/ — a tela e tudo que é exclusivo dela
+      {Flow}Page/            # a tela do flow, também pasta MVVM + barrel
+      components/             # componentes LOCAIS — exclusivos deste flow
+        {Componente}/          # mesma pasta MVVM + barrel
+      hooks/                 # hooks LOCAIS do flow
+      context/
+      providers/
+      constants/             # constantes LOCAIS — exclusivas deste flow
+      assets/
 ```
 
 - Um componente só sobe para `presentation/components/` quando é reaproveitado
@@ -141,14 +146,27 @@ De dentro para fora — sempre nesta ordem:
 - Proibido no código-fonte: `any`, `console.log`, identificadores de 1 letra, `.then()` (use `async/await`).
 - JSX condicional: ternário `? ... : null`, nunca `&&`.
 - Ternários usados como valor de prop JSX → extrair para constante nomeada.
-- **Tipagens que não cabem inline** → arquivo irmão `{nome}.types.ts`
-  (ex.: `ProductModal.types.ts` ao lado de `ProductModal.tsx`). Não criar esse
-  arquivo preventivamente — só quando as tipagens do arquivo principal
-  começam a atrapalhar a leitura.
-- **CSS que cresce demais** → arquivo irmão `{nome}.styles` (`.styles.ts` para
-  CSS-in-JS, `.styles.css`/`.styles.module.css` para stylesheet — conforme o
-  adaptador de estilo do projeto). Mesma regra: só extrair quando o estilo
-  inline/local já não cabe confortavelmente no arquivo do componente.
+- **Componente = pasta MVVM com barrel.** Todo componente de `presentation` é
+  uma pasta com `index.ts`, separando Model (estado/dados), ViewModel (adaptação)
+  e View (JSX). Convenção completa em [componentes-mvvm.md](./componentes-mvvm.md).
+- **Tipos do componente** → sempre em `{nome}.types.ts` (nunca inline no arquivo
+  principal). Para não-componentes, a regra é mais frouxa: extrair tipos só
+  quando começam a atrapalhar a leitura.
+- **Estilização via Tailwind. `style={{}}` inline é proibido.** Todo estilo é
+  classe utilitária Tailwind (combinada com as classes do design system, ex.
+  `className="s-input flex-1"`). Única exceção: valor calculado em runtime que o
+  utilitário não expressa — e mesmo aí, preferir CSS variable. CSS que não cabe
+  em utilitário e se repete → classe no design system ou, em último caso,
+  arquivo irmão `{nome}.styles.ts`. Detalhes em
+  [componentes-mvvm.md](./componentes-mvvm.md#estilização-tailwind).
+- **Ícones via `lucide-react`.** Proibido `<svg>` inline ou componente de ícone
+  próprio. Importar pelo nome (`import { Search } from 'lucide-react'`) e usar na
+  View. Ícones legados (`SolIcon`) estão em migração.
+- **Formulários via `react-hook-form` + `zod`**, nunca `useState` por campo.
+  Preferência _uncontrolled_ (`register`); _controlled_ (`Controller`) só como
+  fallback quando o campo não pode ser uncontrolled. Schema em `{nome}.schema.ts`,
+  `useForm` no Model. Detalhes em
+  [componentes-mvvm.md](./componentes-mvvm.md#formulários-react-hook-form).
 - **Evitar arquivos muito grandes.** Quando um componente cresce demais,
   quebrar em subcomponentes dentro da pasta local `components/` do próprio
   flow (ou ao lado do componente, se for um único subcomponente pequeno).
