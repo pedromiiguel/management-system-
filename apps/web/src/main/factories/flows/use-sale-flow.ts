@@ -14,7 +14,7 @@ import {
  * Composition root do PDV (ADR 0003): junta as mutations em torno do ciclo de
  * vida da venda (Sale) num único objeto. Não decide nada de UI — foco do
  * scanner, debounce de quantidade, toasts e estado de formulário de checkout
- * continuam em presentation/sale/, que reage ao resultado de cada chamada.
+ * continuam em presentation/flows/sale/, que reage ao resultado de cada chamada.
  */
 export function useSaleFlow() {
   const [sale, setSale] = useState<Sale | null>(null);
