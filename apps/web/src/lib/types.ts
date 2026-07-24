@@ -1,10 +1,14 @@
 import type { PaymentMethod } from '@beverage/shared';
 
-// Product, Sale, SaleItem e Customer são definidos em @/domain/models/sale —
-// única fonte da verdade (ADR 0003/0004). Reexportados aqui só porque
-// products.tsx, reports.tsx e stock.tsx ainda importam deste arquivo e estão
-// fora do escopo do piloto de Clean Architecture.
-export type { Product, Sale, SaleItem, Customer } from '@/domain/models/sale';
+// Sale, SaleItem e Customer são definidos em @/domain/models/sale — única
+// fonte da verdade (ADR 0003/0004). Reexportados aqui só porque reports.tsx
+// ainda importa deste arquivo e está fora do escopo das migrações atuais.
+export type { Sale, SaleItem, Customer } from '@/domain/models/sale';
+
+// Product é definido em @/domain/models/products (ADR 0007). Reexportado
+// aqui pela mesma razão acima — stock.tsx e reports.tsx ainda importam Product
+// deste arquivo.
+export type { Product } from '@/domain/models/products';
 
 // CashMovement, CashRegister, Receivable, Payable, FinancialCategory e
 // Dashboard são definidos em @/domain/models/financial — única fonte da
@@ -18,23 +22,14 @@ export type {
   Dashboard,
 } from '@/domain/models/financial';
 
-export interface Paginated<T> {
-  items: T[];
-  total: number;
-  page: number;
-  perPage: number;
-}
+// Paginated é definido em @/domain/models/products (ADR 0007) — genérico o
+// bastante para ter nascido lá por ser o primeiro domínio a precisar dele.
+// Reexportado aqui porque reports.tsx e stock.tsx ainda usam este tipo.
+export type { Paginated } from '@/domain/models/products';
 
-export interface StockAlerts {
-  lowStock: { id: string; name: string; sku: string; currentStock: number; minimumStock: number }[];
-  expiring: {
-    id: string;
-    batch: string | null;
-    expiresAt: string | null;
-    quantity: number;
-    product: { id: string; name: string; sku: string };
-  }[];
-}
+// StockAlerts é definido em @/domain/models/stock (ADR 0007). Reexportado
+// aqui porque stock.tsx ainda importa deste arquivo.
+export type { StockAlerts } from '@/domain/models/stock';
 
 export interface AppSettings {
   stockPolicy: 'BLOCK' | 'WARN';

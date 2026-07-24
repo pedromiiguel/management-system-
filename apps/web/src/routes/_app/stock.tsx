@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Screen } from '../_app';
-import { StockEntryModal } from './products';
+import { StockEntryModal } from '../../presentation/flows/products/components/StockEntryModal';
 import { SBtn, SCard, SModal, SolIcon, STable, STag, useToast } from '../../components/sol';
 import { api, apiErrorMessage } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/format';

@@ -27,6 +27,21 @@ Cada sub-área é um componente MVVM em `presentation/flows/financial/components
 não existe um flow único agregando as 5 (ver Decisão 1 do ADR 0006 — as abas
 não compartilham estado como o `Sale` faz no PDV).
 
+## Produtos / products (flow)
+
+Cadastro de produtos + entrada de estoque embutida — tela única, sem abas
+(diferente de `financial`/`settings`). `apps/web/src/routes/_app/products.tsx`
+é um wrapper fino; a implementação vive em
+`apps/web/src/presentation/flows/products/`, por cima de
+`apps/web/src/domain|data|infra|main/*` — 3º módulo em Clean Architecture,
+ver [ADR 0007](adr/0007-clean-architecture-products.md). `StockEntryModal`
+(entrada de estoque avulsa) migra junto como componente local do flow;
+`stock.tsx` (fora de escopo) importa esse componente do novo caminho.
+`Product` passa a ser definido em `domain/models/products.ts` (antes vivia em
+`domain/models/sale.ts` por efeito colateral de `sale` ter sido o piloto —
+ver ADR 0005); `domain/models/stock.ts` nasce nesta ADR só para o tipo
+`StockAlerts`, sem nenhum usecase de `stock` ainda.
+
 ## flushPendingQuantity
 
 Função que força o envio imediato ao servidor de qualquer alteração de
@@ -74,11 +89,12 @@ obrigatória para o resto do repositório.
 Convenção portátil de arquitetura para o front: `presentation → main → data →
 domain ← @shared`. Uma camada só importa camadas mais internas; `domain` é
 TypeScript puro sem framework. Adotada como piloto no PDV em
-[ADR 0003](adr/0003-clean-architecture-piloto-pos.md) e estendida ao
-`financial` em [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md) —
-com dois módulos independentes validando o mesmo padrão, **é a convenção
-esperada** para as próximas migrações (`products`, `reports`, `stock`,
-`settings`), não mais uma decisão caso a caso.
+[ADR 0003](adr/0003-clean-architecture-piloto-pos.md), estendida ao
+`financial` em [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md)
+e ao `products` em [ADR 0007](adr/0007-clean-architecture-products.md) —
+com módulos independentes validando o mesmo padrão, **é a convenção
+esperada** para as próximas migrações (`reports`, `stock`, `settings`), não
+mais uma decisão caso a caso.
 
 ## `IHttpClient`
 

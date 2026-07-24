@@ -1,17 +1,11 @@
 import type { PaymentMethod, SaleStatus } from '@beverage/shared';
 
-export interface Product {
-  id: string;
-  sku: string;
-  ean: string | null;
-  name: string;
-  unit: string;
-  purchasePrice: number;
-  salePrice: number;
-  currentStock: number;
-  minimumStock: number;
-  active: boolean;
-}
+// Product é definido em @/domain/models/products (ADR 0007) — pertence
+// conceitualmente a esse domínio, não a sale. Reexportado aqui porque sale
+// precisa dele para montar SaleItemProduct, e vários arquivos deste flow já
+// importam Product a partir daqui (import não quebra).
+import type { Product } from '@/domain/models/products';
+export type { Product };
 
 export interface Customer {
   id: string;
