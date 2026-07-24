@@ -10,3 +10,4 @@ apps/web/src/routeTree.gen.ts
 backups/
 
 .claude/
+.agents/
