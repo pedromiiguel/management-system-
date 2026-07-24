@@ -1,14 +1,14 @@
 import type { IHttpClient } from '@/@contracts/http';
-import type { StockEntryInput } from '@/domain/models/products';
-import type { ICreateStockEntry } from '@/domain/usecases/products/create-stock-entry';
-import { productsEndpoints } from '@/infra/endpoints/products';
+import type { StockEntryInput } from '@/domain/models/stock';
+import type { ICreateStockEntry } from '@/domain/usecases/stock/create-stock-entry';
+import { stockEndpoints } from '@/infra/endpoints/stock';
 
 export class CreateStockEntryHandler implements ICreateStockEntry {
   constructor(private readonly httpClient: IHttpClient) {}
 
   async create(input: StockEntryInput): Promise<{ currentStock: number }> {
     const response = await this.httpClient.request<StockEntryInput, { currentStock: number }>({
-      url: productsEndpoints.stockEntries(),
+      url: stockEndpoints.stockEntries(),
       method: 'POST',
       body: input,
     });

@@ -1,9 +1,4 @@
-/**
- * Domínio `stock` criado na ADR 0007 só para este tipo — nenhum usecase de
- * `stock` migrou ainda (ver Decisão 3 da ADR 0007). `ICreateStockEntry`
- * continua em `domain/usecases/products` por enquanto (mesmo desvio do
- * `IGetSalesTotal` na ADR 0006).
- */
+/** Domínio `stock` — criado na ADR 0007 para `StockAlerts`, completo na ADR 0008. */
 export interface StockAlerts {
   lowStock: { id: string; name: string; sku: string; currentStock: number; minimumStock: number }[];
   expiring: {
@@ -14,3 +9,18 @@ export interface StockAlerts {
     product: { id: string; name: string; sku: string };
   }[];
 }
+
+export type MovementType = 'ENTRY' | 'EXIT';
+export type MovementSource = 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'CANCELLATION';
+
+export interface StockMovement {
+  id: string;
+  type: MovementType;
+  source: MovementSource;
+  quantity: number;
+  note: string | null;
+  createdAt: string;
+  product: { name: string; sku: string; unit: string };
+}
+
+export type { StockEntryInput, StockAdjustmentInput } from '@beverage/shared';

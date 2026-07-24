@@ -24,9 +24,4 @@ export interface Paginated<T> {
   perPage: number;
 }
 
-export type {
-  ProductInput,
-  UpdateProductInput,
-  ProductStockEntryInput,
-  StockEntryInput,
-} from '@beverage/shared';
+export type { ProductInput, UpdateProductInput, ProductStockEntryInput } from '@beverage/shared';

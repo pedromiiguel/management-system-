@@ -2,7 +2,7 @@ import { Search } from 'lucide-react';
 import { Screen } from '@/presentation/components/Screen';
 import { SBtn, SCard, SChip, STable } from '@/components/sol';
 import { ProductModal } from '../components/ProductModal';
-import { StockEntryModal } from '../components/StockEntryModal';
+import { StockEntryModal } from '@/presentation/flows/stock/components/StockEntryModal';
 import type { ProductsPageViewProps } from './ProductsPage.types';
 
 export function ProductsPageView({

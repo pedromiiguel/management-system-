@@ -1,8 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
-import type { ProductInput, StockEntryInput, UpdateProductInput } from '@/domain/models/products';
+import type { ProductInput, UpdateProductInput } from '@/domain/models/products';
 import {
   makeCreateProduct,
-  makeCreateStockEntry,
   makeDeactivateProduct,
   makeDeleteProduct,
   makeUpdateProduct,
@@ -25,8 +24,4 @@ export function useDeactivateProductMutation() {
 
 export function useDeleteProductMutation() {
   return useMutation({ mutationFn: (id: string) => makeDeleteProduct().delete(id) });
-}
-
-export function useCreateStockEntryMutation() {
-  return useMutation({ mutationFn: (input: StockEntryInput) => makeCreateStockEntry().create(input) });
 }

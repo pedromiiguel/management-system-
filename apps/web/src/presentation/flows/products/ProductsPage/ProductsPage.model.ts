@@ -5,7 +5,8 @@ import { useToast } from '@/components/sol';
 import { apiErrorMessage } from '@/lib/api';
 import type { Product } from '@/domain/models/products';
 import { useDeleteProductMutation } from '@/main/factories/mutations/products';
-import { useProductCatalogQuery, useStockAlertsQuery } from '@/main/factories/queries/products';
+import { useProductCatalogQuery } from '@/main/factories/queries/products';
+import { useStockAlertsQuery } from '@/main/factories/queries/stock';
 import type { ProductFilter, ProductModalState } from './ProductsPage.types';
 
 export function useProductsPageModel() {

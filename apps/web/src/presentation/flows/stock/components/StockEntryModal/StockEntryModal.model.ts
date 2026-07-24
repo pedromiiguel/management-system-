@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/sol';
 import { apiErrorMessage } from '@/lib/api';
 import type { Product } from '@/domain/models/products';
-import { useCreateStockEntryMutation } from '@/main/factories/mutations/products';
+import { useCreateStockEntryMutation } from '@/main/factories/mutations/stock';
 import { useProductSearchQuery } from '@/main/factories/queries/products';
 import {
   stockEntryFormSchema,

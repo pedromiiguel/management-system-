@@ -42,6 +42,28 @@ ver [ADR 0007](adr/0007-clean-architecture-products.md). `StockEntryModal`
 ver ADR 0005); `domain/models/stock.ts` nasce nesta ADR só para o tipo
 `StockAlerts`, sem nenhum usecase de `stock` ainda.
 
+## Estoque / stock (flow)
+
+Movimentações de estoque (entrada de compra/reposição, ajuste manual
+auditável, estorno automático de venda) e os dois painéis de alerta
+(estoque mínimo — FR-07; validade próxima/FEFO — FR-08). Tela única, sem
+abas. `apps/web/src/routes/_app/stock.tsx` é hoje um wrapper fino; a
+implementação vive em `apps/web/src/presentation/flows/stock/`, por cima de
+`apps/web/src/domain|data|infra|main/*` — 4º módulo em Clean Architecture,
+ver [ADR 0008](adr/0008-clean-architecture-stock.md).
+
+`StockEntryModal` (entrada de estoque avulsa) migrou de
+`presentation/flows/products/` para `presentation/flows/stock/components/`
+nesta rodada — fechou a pendência que a [ADR 0007](adr/0007-clean-architecture-products.md)
+deixou aberta. `ProductsPage` importa o modal de `stock` (inverteu a
+direção do import de antes). `ICreateStockEntry` e `IGetStockAlerts`
+acompanharam, saindo de `domain/usecases/products` para
+`domain/usecases/stock`. `StockMovement` nasceu em `domain/models/stock.ts`
+(ao lado de `StockAlerts`, já lá desde a ADR 0007); `StockPosition`
+**não** foi adiantado — continua território de `reports` até sua própria
+migração. `AdjustModal` (novo, sem equivalente em `products`) reusa
+`ISearchProductCatalog` de `products` para a busca de produto.
+
 ## flushPendingQuantity
 
 Função que força o envio imediato ao servidor de qualquer alteração de
@@ -93,8 +115,9 @@ TypeScript puro sem framework. Adotada como piloto no PDV em
 `financial` em [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md)
 e ao `products` em [ADR 0007](adr/0007-clean-architecture-products.md) —
 com módulos independentes validando o mesmo padrão, **é a convenção
-esperada** para as próximas migrações (`reports`, `stock`, `settings`), não
-mais uma decisão caso a caso.
+esperada** para as próximas migrações, não mais uma decisão caso a caso.
+`stock` é o 4º módulo, ver [ADR 0008](adr/0008-clean-architecture-stock.md);
+`reports` e `settings` continuam como próximos candidatos.
 
 ## `IHttpClient`
 
