@@ -15,6 +15,18 @@ fino; a implementação real vive em `apps/web/src/presentation/flows/sale/`, po
 cima de `apps/web/src/domain|data|infra|main/*` — piloto de Clean
 Architecture, ver [ADR 0003](adr/0003-clean-architecture-piloto-pos.md).
 
+## Financeiro / financial (flow)
+
+Tela com 5 sub-áreas (Visão geral, Caixa, Fiado, Contas a pagar, Fluxo &
+lançamentos), navegadas por abas (`SSeg`) na mesma rota —
+`apps/web/src/routes/_app/financial.tsx` é um wrapper fino; a implementação
+vive em `apps/web/src/presentation/flows/financial/`, por cima de
+`apps/web/src/domain|data|infra|main/*` — 2º módulo em Clean Architecture,
+ver [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md).
+Cada sub-área é um componente MVVM em `presentation/flows/financial/components/`;
+não existe um flow único agregando as 5 (ver Decisão 1 do ADR 0006 — as abas
+não compartilham estado como o `Sale` faz no PDV).
+
 ## flushPendingQuantity
 
 Função que força o envio imediato ao servidor de qualquer alteração de
@@ -62,8 +74,11 @@ obrigatória para o resto do repositório.
 Convenção portátil de arquitetura para o front: `presentation → main → data →
 domain ← @shared`. Uma camada só importa camadas mais internas; `domain` é
 TypeScript puro sem framework. Adotada como piloto no PDV em
-[ADR 0003](adr/0003-clean-architecture-piloto-pos.md) — **não** é convenção
-de repo ainda.
+[ADR 0003](adr/0003-clean-architecture-piloto-pos.md) e estendida ao
+`financial` em [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md) —
+com dois módulos independentes validando o mesmo padrão, **é a convenção
+esperada** para as próximas migrações (`products`, `reports`, `stock`,
+`settings`), não mais uma decisão caso a caso.
 
 ## `IHttpClient`
 
@@ -98,3 +113,14 @@ retorno de foco do scanner (via helpers `addKnownItems`/`ensureFreshSale` em
 `support/sale.ts` — achado tardio, ver [ADR 0003](adr/0003-clean-architecture-piloto-pos.md)).
 Deliberadamente não cobre regra de negócio (totais, taxa de serviço, fiado).
 Ver [ADR 0001](adr/0001-e2e-antes-da-refatoracao-do-front.md).
+
+## Suíte supertest do financial
+
+`apps/api/test/financial.e2e-spec.ts` — Jest + supertest, contra um NestJS
+`TestingModule` real e o Postgres local (não mockado). Cobre as regras de
+negócio que o [ADR 0001](adr/0001-e2e-antes-da-refatoracao-do-front.md)
+apontou como bloqueio para `financial.tsx`: diferença de fechamento de caixa
+(BR-06), liquidação de fiado (BR-08) e pagamento de contas. Complementa a
+[suíte E2E do financeiro](../../apps/e2e/tests/06-financeiro.spec.ts)
+(`06-financeiro.spec.ts`), que cobre a integração UI ↔ API das 5 abas, não a
+regra de negócio em si. Ver [ADR 0006](adr/0006-clean-architecture-financial-promove-convencao.md).

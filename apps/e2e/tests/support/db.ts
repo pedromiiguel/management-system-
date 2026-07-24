@@ -18,5 +18,12 @@ export function resetDatabase(): void {
     stdio: 'inherit',
     // No Windows, .cmd precisa passar pelo shell — sem isso o spawn falha com EINVAL.
     shell: process.platform === 'win32',
+    env: {
+      ...process.env,
+      // Usuário consentiu explicitamente (grilling de 2026-07-23, ADR 0006) a
+      // resetar este Postgres LOCAL de dev sempre que a suite precisar —
+      // Prisma bloqueia `migrate reset` por padrão quando detecta um agente IA.
+      PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION: 'Sim, pode resetar (Recomendado)',
+    },
   });
 }

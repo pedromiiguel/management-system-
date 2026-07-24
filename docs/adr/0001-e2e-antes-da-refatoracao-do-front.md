@@ -43,7 +43,9 @@ refatoração.
 - Regra de negócio de `financial.tsx` (taxa de serviço, fiado) permanece sem
   nenhum teste automatizado — nem E2E (por design) nem API (nunca escrito).
   Isso bloqueia incluir `financial.tsx` em refatorações futuras até existir
-  suíte supertest para essas regras.
+  suíte supertest para essas regras. **Endereçado em
+  [ADR 0006](0006-clean-architecture-financial-promove-convencao.md)**, que
+  trata a suíte supertest como pré-requisito antes de tocar no front.
 
 ## Alternativas rejeitadas
 

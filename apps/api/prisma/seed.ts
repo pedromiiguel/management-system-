@@ -138,6 +138,17 @@ async function main() {
         });
       }
     }
+
+    // Fiado em aberto — exercita a aba "Fiado (a receber)" do financeiro sem
+    // depender de completar uma venda a crédito na suíte E2E (ADR 0006).
+    const openReceivable = await prisma.accountReceivable.findFirst({
+      where: { customerId: 'seed-customer-fiado', status: 'OPEN' },
+    });
+    if (!openReceivable) {
+      await prisma.accountReceivable.create({
+        data: { customerId: 'seed-customer-fiado', amount: 42 },
+      });
+    }
   }
 
   console.log('Seed concluído. Login: admin / senha:', process.env.ADMIN_PASSWORD ?? 'admin123');
